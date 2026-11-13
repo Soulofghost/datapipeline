@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataPipeline — Automated ETL Framework &amp; Data Engineering Studio</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="etl-shell">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="pipeline-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>DATAPIPELINE <span class="badge-tag">ETL ENGINE v1.0</span></h1>
+          <p class="brand-caption">STREAMING TRANSFORMS • SCHEMA VALIDATION • DATA LAKE INGESTION</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="engine-status">
+          <span class="live-dot pulse"></span>
+          <span>ORCHESTRATOR: ACTIVE &amp; IDLE</span>
+        </div>
+        <button id="refreshSummaryBtn" class="btn btn-secondary">Sync Telemetry</button>
+      </div>
+    </header>
+
+    <!-- Metrics Strip -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <span class="m-title">REGISTERED PIPELINES</span>
+        <span class="m-val text-cyan" id="statPipelines">0</span>
+        <span class="m-note">Active ETL Definitions</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-title">LIFETIME RUNS</span>
+        <span class="m-val" id="statRuns">0</span>
+        <span class="m-note">Completed Workflows</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-title">WAREHOUSE ROWS</span>
+        <span class="m-val text-emerald" id="statRows">0</span>
+        <span class="m-note">Ingested &amp; Normalized</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-title">DATA QUALITY PASS RATE</span>
+        <span class="m-val text-gold" id="statQuality">100.0%</span>
+        <span class="m-note">Schema Integrity Index</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-title">AVG EXECUTION LATENCY</span>
+        <span class="m-val text-purple" id="statDuration">0.00 ms</span>
+        <span class="m-note">In-Memory Transform Speed</span>
+      </div>
+    </section>
+
+    <!-- Main Workspace -->
+    <main class="main-layout">
+      <!-- Left Column: Pipeline Catalog & Registration -->
+      <section class="col-pipelines">
+        <div class="panel-box">
+          <div class="panel-head">
+            <h2>Active ETL Pipelines</h2>
+            <button class="btn btn-sm btn-outline" onclick="toggleAddPipelineModal()">+ Create Pipeline</button>
+          </div>
+
+          <div class="pipeline-list" id="pipelineContainer">
+            <!-- Pipeline cards rendered here -->
+          </div>
+        </div>
+
+        <!-- Add Pipeline Modal/Box -->
+        <div class="panel-box hidden" id="addPipelinePanel">
+          <div class="panel-head">
+            <h3>Register Custom ETL Pipeline</h3>
+          </div>
+          <form id="newPipelineForm" class="etl-form">
+            <div class="form-row">
+              <label>Pipeline Name</label>
+              <input type="text" id="pipeName" placeholder="e.g. clickstream-events-etl" required>
+            </div>
+            <div class="form-row">
+              <label>Description</label>
+              <input type="text" id="pipeDesc" placeholder="e.g. Ingests raw telemetry and cleanses IDs" required>
+            </div>
+            <div class="form-cols">
+              <div class="form-row">
+                <label>Source Type</label>
+                <select id="pipeSource">
+                  <option value="JSON_STREAM">JSON_STREAM</option>
+                  <option value="CSV_BATCH">CSV_BATCH</option>
+                  <option value="SQL_CDC">SQL_CDC</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Target Table</label>
+                <input type="text" id="pipeTarget" placeholder="wh_clickstream" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <label>Deduplication Key (Field Name)</label>
+              <input type="text" id="pipeDedup" placeholder="e.g. event_id">
+            </div>
+            <div class="form-row">
+              <label>PII Mask Fields (Comma-separated)</label>
+              <input type="text" id="pipeMask" placeholder="e.g. email, phone">
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" onclick="toggleAddPipelineModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Pipeline</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Right Column: Tabs (Run Inspector, Warehouse Lake, Sandbox) -->
+      <section class="col-inspector">
+        <div class="tab-strip">
+          <button class="tab-btn active" data-tab="runsTab">Execution Diagnostics</button>
+          <button class="tab-btn" data-tab="warehouseTab">Warehouse Data Lake</button>
+          <button class="tab-btn" data-tab="sandboxTab">Live Ingestion Sandbox</button>
+        </div>
+
+        <!-- Tab 1: Execution Diagnostics -->
+        <div class="tab-content active" id="runsTab">
+          <div class="panel-box">
+            <div class="panel-head">
+              <h2>Execution Run Inspector</h2>
+              <span class="status-pill" id="latestRunStatus">Awaiting Trigger</span>
+            </div>
+
+            <div class="run-body" id="runDetailsContainer">
+              <div class="empty-state">Select an ETL pipeline on the left and click "Execute Pipeline" to inspect transformation telemetry.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Warehouse Records -->
+        <div class="tab-content" id="warehouseTab">
+          <div class="panel-box">
+            <div class="panel-head">
+              <h2>Target Warehouse Records</h2>
+              <span class="sub-caption">Persisted Normalized Tables</span>
+            </div>
+
+            <div class="warehouse-scroll" id="warehouseContainer">
+              <div class="empty-state">No warehouse records ingested yet. Execute a pipeline to populate tables.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Sandbox -->
+        <div class="tab-content" id="sandboxTab">
+          <div class="panel-box">
+            <div class="panel-head">
+              <h2>Interactive Data Ingestion Sandbox</h2>
+              <span class="sub-caption">Test ETL Transformations In Real Time</span>
+            </div>
+
+            <div class="sandbox-body">
+              <div class="form-row">
+                <label>Input Raw JSON Array</label>
+                <textarea id="sandboxInput" rows="7" placeholder='[{"order_id": "ORD-999", "customer_email": "tony@stark.com", "customer_phone": "212-555-0100", "quantity": 3, "unit_price": 500.0, "cost": 900.0}]'></textarea>
+              </div>
+              <button id="sandboxExecuteBtn" class="btn btn-primary">Run Ingestion Transform</button>
+
+              <div class="sandbox-output-box">
+                <label>Transformed &amp; Anonymized Output</label>
+                <pre id="sandboxOutput">// Output will appear here after execution</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
